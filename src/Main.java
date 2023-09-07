@@ -1,14 +1,13 @@
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.*;
 import java.util.Scanner;
 
 public class Main extends JFrame {
     private static JTextArea textArea;
     private static JTextField textField;
-    private static int PORT = 8189;
+    private static int PORT = 4040;
 
 
     public static void Draw(JFrame frame){
@@ -19,9 +18,6 @@ public class Main extends JFrame {
         scrollPane.setLocation(0,0);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
-        button.addActionListener(e ->{
-
-        });
         frame.setDefaultCloseOperation(EXIT_ON_CLOSE);
         frame.setSize(400,400);
         frame.setResizable(false);
@@ -29,15 +25,14 @@ public class Main extends JFrame {
         frame.getContentPane().add(BorderLayout.CENTER,textField);
         frame.getContentPane().add(BorderLayout.EAST,button);
         button.addActionListener(e ->{
-        try(Socket socket = new Socket()){
-            socket.connect(new InetSocketAddress(InetAddress.getLocalHost(),PORT), 1000);
-            PrintWriter writer = new PrintWriter(socket.getOutputStream());
-            writer.print(textField.getText());
-            Scanner scanner = new Scanner(socket.getInputStream());
-            while (scanner.hasNext()){
-                textArea.append(scanner.nextLine());
-                textArea.setCaretPosition(textArea.getText().length());
-            }
+        try(Socket socket = new Socket("localhost",PORT)){
+            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
+            out.write((textField.getText()+"\n").getBytes());
+            out.flush();
+            Scanner in = new Scanner(new InputStreamReader(socket.getInputStream()));
+            textArea.append(in.nextLine()+"\n\r");
+            textArea.setCaretPosition(textArea.getText().length());
+            textField.setText("");
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
