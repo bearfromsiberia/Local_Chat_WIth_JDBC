@@ -1,23 +1,15 @@
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.*;
+import java.util.Scanner;
 
 public class Main extends JFrame {
     private static JTextArea textArea;
     private static JTextField textField;
+    private static int PORT = 8189;
 
-    private class Server extends Thread{
-        public Server(Receiver receiver){
-                super(new Receiver());
-        }
-    }
-
-    private class Receiver implements Runnable{
-
-        @Override
-        public void run() {
-
-        }
-    }
 
     public static void Draw(JFrame frame){
         textArea = new JTextArea(400/19,50);
@@ -36,10 +28,25 @@ public class Main extends JFrame {
         frame.getContentPane().add(BorderLayout.NORTH,scrollPane);
         frame.getContentPane().add(BorderLayout.CENTER,textField);
         frame.getContentPane().add(BorderLayout.EAST,button);
+        button.addActionListener(e ->{
+        try(Socket socket = new Socket()){
+            socket.connect(new InetSocketAddress(InetAddress.getLocalHost(),PORT), 1000);
+            PrintWriter writer = new PrintWriter(socket.getOutputStream());
+            writer.print(textField.getText());
+            Scanner scanner = new Scanner(socket.getInputStream());
+            while (scanner.hasNext()){
+                textArea.append(scanner.nextLine());
+                textArea.setCaretPosition(textArea.getText().length());
+            }
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+            textField.setText("");
+        });
         frame.setVisible(true);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Draw(new Main());
     }
 }
