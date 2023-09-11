@@ -8,9 +8,12 @@ public class Main extends JFrame {
     private static JTextArea textArea;
     private static JTextField textField;
     private static int PORT = 4040;
+    private  Socket socket;
+    private  BufferedWriter out;
+    private static BufferedReader in;
 
 
-    public static void Draw(JFrame frame){
+    public void Draw() throws IOException {
         textArea = new JTextArea(400/19,50);
         textField = new JTextField();
         JButton button = new JButton("Send");
@@ -18,30 +21,57 @@ public class Main extends JFrame {
         scrollPane.setLocation(0,0);
         textArea.setLineWrap(true);
         textArea.setEditable(false);
-        frame.setDefaultCloseOperation(EXIT_ON_CLOSE);
-        frame.setSize(400,400);
-        frame.setResizable(false);
-        frame.getContentPane().add(BorderLayout.NORTH,scrollPane);
-        frame.getContentPane().add(BorderLayout.CENTER,textField);
-        frame.getContentPane().add(BorderLayout.EAST,button);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(400,400);
+        setResizable(false);
+        getContentPane().add(BorderLayout.NORTH,scrollPane);
+        getContentPane().add(BorderLayout.CENTER,textField);
+        getContentPane().add(BorderLayout.EAST,button);
+        socket = new Socket("localhost",PORT);
+        out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         button.addActionListener(e ->{
-        try(Socket socket = new Socket("localhost",PORT)){
-            BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream());
-            out.write((textField.getText()+"\n").getBytes());
-            out.flush();
-            Scanner in = new Scanner(new InputStreamReader(socket.getInputStream()));
-            textArea.append(in.nextLine()+"\n\r");
+            try {
+                out.write(textField.getText() + "\n");
+                out.flush();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            try {
+                textArea.append(in.readLine()+"\n");
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
             textArea.setCaretPosition(textArea.getText().length());
             textField.setText("");
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-            textField.setText("");
         });
-        frame.setVisible(true);
+        setVisible(true);
     }
+    class Client_receiver implements Runnable{
 
+        @Override
+            public void run() {
+                while (true){
+                    try {
+                        if (!in.ready()) break;
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    try{
+                    textArea.append(in.readLine()+"\n");
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        }
+    }
+    public Client_receiver nonstatic(){
+        return new Client_receiver();
+    }
     public static void main(String[] args) throws IOException {
-        Draw(new Main());
+        Main client = new Main();
+        client.Draw();
+        new Thread(client.nonstatic()).start();
     }
 }
+
