@@ -37,14 +37,10 @@ public class Main extends JFrame {
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
-            try {
-                textArea.append(in.readLine()+"\n");
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
             textArea.setCaretPosition(textArea.getText().length());
             textField.setText("");
         });
+        new Thread(this.nonstatic()).start();
         setVisible(true);
     }
     class Client_receiver implements Runnable{
@@ -52,13 +48,9 @@ public class Main extends JFrame {
         @Override
             public void run() {
                 while (true){
-                    try {
-                        if (!in.ready()) break;
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
                     try{
                     textArea.append(in.readLine()+"\n");
+                    textArea.setCaretPosition(textArea.getText().length());
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -71,7 +63,6 @@ public class Main extends JFrame {
     public static void main(String[] args) throws IOException {
         Main client = new Main();
         client.Draw();
-        new Thread(client.nonstatic()).start();
     }
 }
 
